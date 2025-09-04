@@ -1,0 +1,44 @@
+run_name: norm-byt5-cpu
+
+# 这里新增 env，程序会在启动时自动设置环境变量
+env:
+  HF_ENDPOINT: "https://hf-mirror.com"
+  HF_HOME: "./.hf_cache"   # 缓存目录，可自定义（如 D:/hf_cache）
+
+model:
+  name: google/byt5-small   # 模型名称；如果你之后手动下载到本地，可以改为 ./models/byt5-small
+  lora:
+    enable: true
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules: ["q", "v"]
+
+train:
+  prefix: "normalize: "
+  max_length: 96
+  num_train_epochs: 4
+  batch_size: 8
+  eval_batch_size: 8
+  learning_rate: 5e-4
+  weight_decay: 0.01
+  gradient_accumulation_steps: 2
+  fp16: false
+  save_dir: ckpts/norm-byt5-cpu
+  metric_for_best: cer
+  greater_is_better: false
+  seed: 42
+  logging_steps: 50
+  eval_strategy: epoch      # ✅ 确认有这个字段
+  save_strategy: epoch      # ✅ 确认和上面一致
+  label_smoothing: 0.1
+  num_beams: 5
+
+
+data:
+  csv_path: data/models_pairs.csv
+  test_size: 0.1
+  valid_size_from_train: 0.1111   # => 0.8 / 0.1 / 0.1
+
+inference:
+  regex: "^[\\p{Han}A-Za-z0-9\\-_/．\\.,，（）()=+\\*×／/:：;；\\[\\]【】<>《》\\s]{1,120}$"

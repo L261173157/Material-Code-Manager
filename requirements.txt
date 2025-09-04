@@ -1,0 +1,9 @@
+transformers>=4.41.0
+datasets>=2.19.0
+accelerate>=0.33.0
+peft>=0.11.1
+rapidfuzz>=3.9.6
+pydantic>=2.7.0
+pyyaml>=6.0.1
+regex>=2024.5.15
+scikit-learn>=1.4.2

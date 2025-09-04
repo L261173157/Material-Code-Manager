@@ -1,0 +1,58 @@
+# 材料型号规范化模型配置文件
+# ================================
+# 
+# 本配置文件适用于 Windows + 国内网络环境
+# 已预配置国内镜像源，提升下载和训练速度
+
+run_name: norm-byt5-cpu  # 运行标识，影响模型保存路径
+
+# 环境变量配置（国内优化）
+env:
+  HF_ENDPOINT: "https://hf-mirror.com"        # HuggingFace 国内镜像
+  HF_HOME: ".hf_cache"                        # 本地模型缓存目录
+  TRANSFORMERS_CACHE: ".hf_cache"             # Transformers 缓存目录  
+  HF_HUB_CACHE: ".hf_cache"                   # Hub 缓存目录
+  TOKENIZERS_PARALLELISM: "false"             # 避免 tokenizer 并行警告
+
+# 模型配置
+model:
+  name: google/byt5-small                     # 基础模型（字符级，适合中文）
+  lora:                                       # LoRA 低秩适应配置
+    enable: true                              # 启用 LoRA（显著降低训练成本）
+    r: 16                                     # LoRA 秩（控制参数量）
+    alpha: 32                                 # LoRA 缩放参数
+    dropout: 0.05                             # LoRA dropout
+    target_modules: ["q", "v"]                # 目标注意力模块
+
+# 训练配置
+train:
+  prefix: "normalize: "                       # 输入文本前缀
+  max_length: 128                             # 最大序列长度（字符数）
+  num_train_epochs: 10                        # 训练轮数
+  batch_size: 8                               # 批次大小（根据显存调整）
+  eval_batch_size: 8                          # 评估批次大小
+  learning_rate: 5e-4                         # 学习率
+  weight_decay: 0.01                          # 权重衰减
+  gradient_accumulation_steps: 1              # 梯度累积步数
+  fp16: false                                 # 半精度训练（CPU设为false）
+  save_dir: ckpts/norm-byt5-cpu              # 模型保存目录
+  metric_for_best: cer                        # 最佳模型评估指标
+  greater_is_better: false                    # CER越小越好
+  seed: 42                                    # 随机种子
+  logging_steps: 10                           # 日志输出间隔
+  eval_strategy: epoch                        # 评估策略（每轮评估）
+  save_strategy: epoch                        # 保存策略（每轮保存）
+  label_smoothing: 0.1                        # 标签平滑
+  num_beams: 3                                # 推理时束搜索大小
+
+# 数据配置
+data:
+  csv_path: data/train_pairs.csv              # 训练数据路径
+  test_size: 0.1                              # 测试集比例
+  valid_size_from_train: 0.1111               # 验证集比例 (=> 0.8训练/0.1验证/0.1测试)
+
+# 推理配置（宽松 Unicode 正则，支持中文和常见符号）
+inference:
+  regex: "^[\\p{Han}A-Za-z0-9\\-_/．\\.,，（）()=+\\*×／/:：;；\\[\\]【】<>《》\\s]{1,150}$"
+  confidence_threshold: 0.8                   # 置信度阈值
+  max_new_tokens: 64                          # 生成的最大新token数
